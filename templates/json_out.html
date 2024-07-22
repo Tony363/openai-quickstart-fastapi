@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ data.on}}</title>
+</head>
+<body>
+    <h1>{{ data.prompts }}</h1>
+    <p>{{ data.score }}</p>
+    <!-- Optionally embed JSON data for client-side use -->
+    <script>
+        var serverData = {{ data  }}; // | tojson
+        console.log('Data from server:', serverData);
+    </script>
+</body>
+</html>
