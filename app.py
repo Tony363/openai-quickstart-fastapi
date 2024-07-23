@@ -3,6 +3,7 @@ from openai import OpenAI
 import uvicorn
 import base64
 import requests
+import json
 from fastapi import FastAPI, Request, Form,UploadFile,File
 from fastapi.responses import HTMLResponse, RedirectResponse,JSONResponse,RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -30,8 +31,7 @@ client = OpenAI(api_key=settings.OPENAI_API_KEY)
 app = FastAPI()
 transform = transforms.Compose([
     transforms.ToTensor(),  # Converts the image to a PyTorch tensor
-    # transforms.Normalize(mean=[0.485, 0.456, 0.406],  # Normalize for pre-trained models
-    #                     std=[0.229, 0.224, 0.225])
+    transforms.Normalize(mean=0,std=255)
 ])
 
 templates = Jinja2Templates(directory="templates")
@@ -42,16 +42,9 @@ def encode_image(image_path:str)->base64:
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
 
-@app.get("/", response_class=HTMLResponse)
-def index(request: Request):
-    return templates.TemplateResponse("upload_image.html", {"request": request})
-
-
-@app.post("/get_json/{}", response_class=HTMLResponse)
-def index(request: Request,file_name: str):
+def get_json(file_name:str)->dict:
     # Getting the base64 string
     base64_image = encode_image(file_name)
-
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {settings.OPENAI_API_KEY}"
@@ -59,13 +52,14 @@ def index(request: Request,file_name: str):
 
     payload = {
         "model": "gpt-4o-mini",
+        "response_format": {"type": "json_object"},
         "messages": [
             {
                 "role": "user",
                 "content": [
                     {
                     "type": "text",
-                    "text": "What’s in this image?"
+                    "text": "You are an intelligent system api that reads the texts from an image and outputs the texts as key values pairs in JSON format. Given an image, output the texts in JSON format."
                 },
                     {
                         "type": "image_url",
@@ -76,47 +70,52 @@ def index(request: Request,file_name: str):
             ]
         }
     ],
-    "max_tokens": 300
+        "max_tokens": 500
     }
 
     response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
-
-    print(response.json())
+    if response.status_code == 200:
+        # Save the response to a file
+        with open("response_data.json", "w") as file:
+            file.write(response.text)
     return response.json()
     # return templates.TemplateResponse("json_out.html", {"request": request, "data": response.json()})
 
+
+@app.get("/", response_class=HTMLResponse)
+def index(request: Request):
+    return templates.TemplateResponse("upload_image.html", {"request": request})
+
+
 @app.post("/output_iqa")
 async def create_upload_file(request:Request,file: UploadFile = File(...)):
+    '''
+    blurry torch.Size([1, 3, 218, 231])
+    fine torch.Size([1, 3, 706, 750])
+    '''
+    classes = ("Good photo", "Bad photo")
+    criteria = "quality"
     # Read the image file into a PIL Image
-    print(file)
     image_content = await file.read()
     image = Image.open(io.BytesIO(image_content)).convert('RGB')
     img = transform(image).unsqueeze(0)
+    print(img.shape)
     metric = CLIPImageQualityAssessment(
-        model_name_or_path='openai/clip-vit-base-patch16',
-        prompts=(("Good Photo.", "Bad Photo."), "quality")
+        model_name_or_path='openai/clip-vit-large-patch14',
+        prompts=(classes, criteria)
     )
     out = {
-        'on':"quality",
-        "prompts":("Good Photo.", "Bad Photo."),
-        "score": metric(img)['quality'],
+        'filename':file.filename,
+        'on':criteria,
+        "prompts":classes,
+        "score": metric(img)[criteria].item(),
     }
     if out['score'] > 0.7:
-        return RedirectResponse(url=f'/get_json/?filename={file.filename}')
-    
-    return templates.TemplateResponse(
-        "json_out.html", 
-        {"request": request, "data": out}
-    )
-
-    # Respond with the random float and image info
-    return JSONResponse(content={"IQA": metric(img),'text':'wtf'})
-
-
-
-
-
-
+        # return RedirectResponse(url=f'/get_json/?filename={file.filename}')
+        info = get_json(file.filename)
+        out.update(json.loads(info['choices'][0]['message']['content']))
+        return out
+    return out
 
 
 if __name__ == "__main__":
