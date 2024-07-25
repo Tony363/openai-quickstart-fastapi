@@ -88,15 +88,13 @@ async def create_upload_file(
     file: UploadFile = File(...),
     choice: str = Form(...), 
 )->dict:
-    print("WTF!!!")
     pairs = {
         'quality': ("Good photo", "Bad photo"),
         'sharpness': ("Sharp photo", "Blurry photo"),
         'noisiness': ("Clean photo", "Noisy photo"),
     }
     classes = pairs[choice.lower()]
-    print(choice)
-    print(classes)
+    
     _ = torch.manual_seed(42)
     transform = transforms.Compose([
         transforms.ToTensor(),  # Converts the image to a PyTorch tensor
