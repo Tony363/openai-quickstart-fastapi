@@ -1,23 +1,23 @@
 {
-  "id": "chatcmpl-9oDvg9fCXYeUmNqOkR85fUy5kOBaH",
+  "id": "chatcmpl-9oyU6FEHbY0plyHDnbyvWqpV4m9Nb",
   "object": "chat.completion",
-  "created": 1721756972,
+  "created": 1721935930,
   "model": "gpt-4o-mini-2024-07-18",
   "choices": [
     {
       "index": 0,
       "message": {
         "role": "assistant",
-        "content": "{\n  \"Type\": \"SFL\",\n  \"Size\": \"3\\\"\",\n  \"Serial_No\": \"0361-3205\",\n  \"Year\": \"2009\",\n  \"Cust_Order_No\": \"KV00005600-2\",\n  \"Cust_Item\": \"1-27-G-4B\",\n  \"Capacity\": \"307 GPM\",\n  \"Head\": \"184.7 FT\",\n  \"RPM\": \"3500\",\n  \"MAWP\": \"1200 PSIG @ 100Â°F\",\n  \"MAWT\": \"\",\n  \"Hydr_Test\": \"1200 PSIG\",\n  \"Weight\": \"600 LBS (PUMP)\",\n  \"Thr_Brg\": \"SKF 7311 BECBM\",\n  \"Rdl_Brg\": \"SKF 6212 J/C3\",\n  \"Service\": \"REFORMATE SPLITTER REFLEX\",\n  \"Product\": \"USA\"\n}"
+        "content": "{\n  \"Type\": \"SFL\",\n  \"Size\": \"3\\\"\",\n  \"Year\": \"2008\",\n  \"Order Number\": \"KV000068960-2\",\n  \"Model\": \"1/2 X 48\",\n  \"Capacity\": \"307 GPM\",\n  \"MAWP\": \"1200 PSIG @ 100°F\",\n  \"Hydro Test\": \"1200 PSIG\",\n  \"Weight\": \"500 LBS (PUMP)\",\n  \"SKF\": \"7311 BECBM\",\n  \"SER\": \"6212 J\",\n  \"Description\": \"REFORMATE SPLITTER REFLEX\",\n  \"Product\": \"USA\"\n}"
       },
       "logprobs": null,
       "finish_reason": "stop"
     }
   ],
   "usage": {
-    "prompt_tokens": 25544,
-    "completion_tokens": 189,
-    "total_tokens": 25733
+    "prompt_tokens": 8543,
+    "completion_tokens": 139,
+    "total_tokens": 8682
   },
   "system_fingerprint": "fp_611b667b19"
 }

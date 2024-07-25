@@ -27,12 +27,7 @@ class Settings(BaseSettings):
 
 settings = Settings()
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
-
 app = FastAPI()
-transform = transforms.Compose([
-    transforms.ToTensor(),  # Converts the image to a PyTorch tensor
-    transforms.Normalize(mean=0,std=255)
-])
 
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -70,7 +65,7 @@ def get_json(file_name:str)->dict:
             ]
         }
     ],
-        "max_tokens": 500
+        "max_tokens": 1000
     }
 
     response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
@@ -88,29 +83,43 @@ def index(request: Request):
 
 
 @app.post("/output_iqa")
-async def create_upload_file(request:Request,file: UploadFile = File(...)):
-    '''
-    blurry torch.Size([1, 3, 218, 231])
-    fine torch.Size([1, 3, 706, 750])
-    '''
-    classes = ("Good photo", "Bad photo")
-    criteria = "quality"
+async def create_upload_file(
+    request:Request,
+    file: UploadFile = File(...),
+    choice: str = Form(...), 
+)->dict:
+    print("WTF!!!")
+    pairs = {
+        'quality': ("Good photo", "Bad photo"),
+        'sharpness': ("Sharp photo", "Blurry photo"),
+        'noisiness': ("Clean photo", "Noisy photo"),
+    }
+    classes = pairs[choice.lower()]
+    print(choice)
+    print(classes)
+    _ = torch.manual_seed(42)
+    transform = transforms.Compose([
+        transforms.ToTensor(),  # Converts the image to a PyTorch tensor
+        # transforms.Normalize(mean=0,std=255)
+        transforms.Normalize(mean=[0.485, 0.456, 0.406],  # Normalize for pre-trained models
+                            std=[0.229, 0.224, 0.225])
+    ])
+    
     # Read the image file into a PIL Image
     image_content = await file.read()
     image = Image.open(io.BytesIO(image_content)).convert('RGB')
-    img = transform(image).unsqueeze(0)
-    print(img.shape)
+    img = transform(image)
     metric = CLIPImageQualityAssessment(
-        model_name_or_path='openai/clip-vit-large-patch14',
-        prompts=(classes, criteria)
+        # model_name_or_path='openai/clip-vit-large-patch14',
+        prompts=(classes, choice)
     )
     out = {
         'filename':file.filename,
-        'on':criteria,
+        'on':choice,
         "prompts":classes,
-        "score": metric(img)[criteria].item(),
+        "score": metric(img)[choice].item(),
     }
-    if out['score'] > 0.7:
+    if out['score'] > 0.75:
         # return RedirectResponse(url=f'/get_json/?filename={file.filename}')
         info = get_json(file.filename)
         out.update(json.loads(info['choices'][0]['message']['content']))
@@ -119,4 +128,12 @@ async def create_upload_file(request:Request,file: UploadFile = File(...)):
 
 
 if __name__ == "__main__":
+    import logging
+
+    # Disable uvicorn access logger
+    uvicorn_access = logging.getLogger("uvicorn.access")
+    uvicorn_access.disabled = True
+
+    logger = logging.getLogger("uvicorn")
+    logger.setLevel(logging.getLevelName(logging.DEBUG))
     uvicorn.run('app:app', host="localhost", port=5001, reload=True)

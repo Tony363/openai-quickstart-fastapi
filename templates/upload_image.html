@@ -1,4 +1,25 @@
-<form action="http://localhost:5001/output_iqa" method="post" enctype="multipart/form-data">
-    <input type="file" name="file">
-    <input type="submit">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File and Dropdown Selection Form</title>
+</head>
+<body>
+<h1>Upload a File and Select an Option</h1>
+<form action="/output_iqa" method="post" enctype="multipart/form-data">
+    <label for="file">Upload file:</label>
+    <input type="file" id="file" name="file">
+    <br><br>
+
+  <label for="choice">Criteria Prompt:</label>
+  <select name="choice" id="choice">
+    <option value="option1">Quality</option>
+    <option value="option2">Shaprness</option>
+    <option value="option3">Noisiness</option>
+  </select>
+  <br><br>
+  <button type="submit">Submit</button>
 </form>
+</body>
+</html>

@@ -1,4 +1,11 @@
 venv/
+ocr_api/*
+ocr_api/
+prodvqa/*
+prodvqa/
+*.png
+*.jpg
+*jpeg
 
 *.pyc
 __pycache__/
