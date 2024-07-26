@@ -1,4 +1,5 @@
 import openai
+import logging
 from openai import OpenAI
 import uvicorn
 import base64
@@ -37,9 +38,11 @@ def encode_image(image_path:str)->base64:
     with open(image_path, "rb") as image_file:
         return base64.b64encode(image_file.read()).decode('utf-8')
 
-def get_json(file_name:str)->dict:
+def get_json(
+    img_bytes:base64
+)->dict:
     # Getting the base64 string
-    base64_image = encode_image(file_name)
+    # base64_image = encode_image(file_name)
     headers = {
         "Content-Type": "application/json",
         "Authorization": f"Bearer {settings.OPENAI_API_KEY}"
@@ -59,7 +62,7 @@ def get_json(file_name:str)->dict:
                     {
                         "type": "image_url",
                         "image_url": {
-                            "url": f"data:image/jpeg;base64,{base64_image}"
+                            "url": f"data:image/jpeg;base64,{img_bytes}"
                         }
                 }
             ]
@@ -119,15 +122,14 @@ async def create_upload_file(
     }
     if out['score'] > 0.75:
         # return RedirectResponse(url=f'/get_json/?filename={file.filename}')
-        info = get_json(file.filename)
+        to_gpt = base64.b64encode(image.tobytes()).decode('utf-8')
+        info = get_json(to_gpt)
         out.update(json.loads(info['choices'][0]['message']['content']))
         return out
     return out
 
 
 if __name__ == "__main__":
-    import logging
-
     # Disable uvicorn access logger
     uvicorn_access = logging.getLogger("uvicorn.access")
     uvicorn_access.disabled = True
