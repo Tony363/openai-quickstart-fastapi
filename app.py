@@ -2,6 +2,7 @@ import openai
 import logging
 from openai import OpenAI
 import uvicorn
+import sys
 import base64
 import requests
 import json
@@ -70,12 +71,8 @@ def get_json(
     ],
         "max_tokens": 1000
     }
-
+    
     response = requests.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
-    if response.status_code == 200:
-        # Save the response to a file
-        with open("response_data.json", "w") as file:
-            file.write(response.text)
     return response.json()
     # return templates.TemplateResponse("json_out.html", {"request": request, "data": response.json()})
 
@@ -124,7 +121,12 @@ async def create_upload_file(
         # return RedirectResponse(url=f'/get_json/?filename={file.filename}')
         to_gpt = base64.b64encode(image.tobytes()).decode('utf-8')
         info = get_json(to_gpt)
-        out.update(json.loads(info['choices'][0]['message']['content']))
+        if info.get('choices') is not None:
+            out.update(json.loads(info['choices'][0]['message']['content']))
+        else:
+            info['error']['mb'] = f"{sys.getsizeof(to_gpt)/1000000} MB?"
+            info['error']['refer_article'] = 'https://community.openai.com/t/400-errors-on-gpt-vision-api-since-today/534538/4'
+            out.update(info['error'])
         return out
     return out
 
@@ -136,4 +138,4 @@ if __name__ == "__main__":
 
     logger = logging.getLogger("uvicorn")
     logger.setLevel(logging.getLevelName(logging.DEBUG))
-    uvicorn.run('app:app', host="localhost", port=5001, reload=True)
+    uvicorn.run('app:app', host="0.0.0.0", port=5001, reload=True)
